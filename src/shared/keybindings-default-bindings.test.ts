@@ -254,6 +254,36 @@ describe('keybindings', () => {
     ).toBe(true)
   })
 
+  it('defines browser copy-link shortcut as Mod+Shift+C on all platforms', () => {
+    expect(getEffectiveKeybindingsForAction('browser.copyLink', 'darwin')).toEqual(['Mod+Shift+C'])
+    expect(getEffectiveKeybindingsForAction('browser.copyLink', 'linux')).toEqual(['Mod+Shift+C'])
+    expect(getEffectiveKeybindingsForAction('browser.copyLink', 'win32')).toEqual(['Mod+Shift+C'])
+    expect(formatKeybindingList(['Mod+Shift+C'], 'darwin')).toBe('⌘⇧C')
+    expect(formatKeybindingList(['Mod+Shift+C'], 'linux')).toBe('Ctrl+Shift+C')
+    expect(formatKeybindingList(['Mod+Shift+C'], 'win32')).toBe('Ctrl+Shift+C')
+    expect(
+      keybindingMatchesAction(
+        'browser.copyLink',
+        { key: 'c', code: 'KeyC', meta: true, control: false, alt: false, shift: true },
+        'darwin'
+      )
+    ).toBe(true)
+    expect(
+      keybindingMatchesAction(
+        'browser.copyLink',
+        { key: 'c', code: 'KeyC', meta: false, control: true, alt: false, shift: true },
+        'linux'
+      )
+    ).toBe(true)
+    expect(
+      keybindingMatchesAction(
+        'browser.copyLink',
+        { key: 'c', code: 'KeyC', meta: false, control: true, alt: false, shift: true },
+        'win32'
+      )
+    ).toBe(true)
+  })
+
   it('binds close-all editor tabs to Mod+Alt+W beside tab.close', () => {
     expect(getEffectiveKeybindingsForAction('tab.closeAll', 'darwin')).toEqual(['Mod+Alt+W'])
     expect(getEffectiveKeybindingsForAction('tab.closeAll', 'linux')).toEqual(['Mod+Alt+W'])

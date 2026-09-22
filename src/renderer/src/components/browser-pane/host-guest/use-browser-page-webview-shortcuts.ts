@@ -1,4 +1,5 @@
 import { useEffect, type MutableRefObject } from 'react'
+import { toast } from 'sonner'
 import { getShortcutPlatform } from '@/hooks/useShortcutLabel'
 import { useAppStore } from '@/store'
 import { keybindingMatchesAction } from '../../../../../shared/keybindings'
@@ -9,6 +10,9 @@ import {
   rememberExplicitBrowserPageZoomLevel,
   type BrowserPageZoomDirection
 } from './browser-page-zoom'
+import { getLiveBrowserUrl } from '../describe-page/live-browser-url-registry'
+
+let hasShownCopyLinkNotice = false
 
 /**
  * History, reload and zoom chords for a <webview>-backed pane — local and client-hosted alike.
@@ -110,6 +114,41 @@ export function useBrowserPageWebviewShortcuts({
     return () => window.removeEventListener('keydown', handleKeyDown, true)
   }, [isActive, keybindings, reloadWebviewOrRecoverGuest])
 
+  // Cmd/Ctrl+Shift+C — copy browser page URL (renderer path: focus on browser chrome, not in guest)
+  // Why: guest shortcut forwarding never fires when focus is on browser chrome, so handle the chord directly here.
+  useEffect(() => {
+    if (!isActive) {
+      return
+    }
+    const shortcutPlatform = getShortcutPlatform()
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      const isCopyLink = keybindingMatchesAction(
+        'browser.copyLink',
+        e,
+        shortcutPlatform,
+        keybindings
+      )
+      if (!isCopyLink) {
+        return
+      }
+      if (isEditableKeyboardTarget(e.target)) {
+        return
+      }
+      const url = getLiveBrowserUrl(browserTabId)
+      if (url) {
+        e.preventDefault()
+        e.stopPropagation()
+        void window.api.ui.writeClipboardText(url)
+        if (!hasShownCopyLinkNotice) {
+          hasShownCopyLinkNotice = true
+          toast.success('URL copied')
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown, true)
+    return () => window.removeEventListener('keydown', handleKeyDown, true)
+  }, [isActive, keybindings, browserTabId])
+
   // Cmd/Ctrl+R — reload (IPC path: focus inside webview guest)
   // Why: a focused guest is a separate Chromium process, so main forwards the chord back here.
   useEffect(() => {
@@ -129,6 +168,24 @@ export function useBrowserPageWebviewShortcuts({
       reloadWebviewOrRecoverGuest(true)
     })
   }, [isActive, reloadWebviewOrRecoverGuest])
+
+  // Cmd/Ctrl+Shift+C — copy browser page URL (IPC path: focus inside webview guest)
+  // Why: a focused guest is a separate Chromium process, so main forwards the chord back here.
+  useEffect(() => {
+    if (!isActive) {
+      return
+    }
+    return window.api.ui.onCopyBrowserPageUrl(() => {
+      const url = getLiveBrowserUrl(browserTabId)
+      if (url) {
+        void window.api.ui.writeClipboardText(url)
+        if (!hasShownCopyLinkNotice) {
+          hasShownCopyLinkNotice = true
+          toast.success('URL copied')
+        }
+      }
+    })
+  }, [isActive, browserTabId])
 
   useEffect(() => {
     if (!isActive) {

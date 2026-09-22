@@ -102,6 +102,7 @@ export type UiCommandEventApi = {
   }) => void
   onNewTerminalTab: (callback: () => void) => () => void
   onFocusBrowserAddressBar: (callback: () => void) => () => void
+  onCopyBrowserPageUrl: (callback: () => void) => () => void
   onFindInBrowserPage: (source: BrowserFindSource, callback: () => void) => () => void
   onReloadBrowserPage: (callback: () => void) => () => void
   onBrowserHistoryNavigate: (callback: (direction: 'back' | 'forward') => void) => () => void

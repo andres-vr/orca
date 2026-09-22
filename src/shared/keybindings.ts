@@ -84,6 +84,7 @@ export type KeybindingActionId =
   | 'browser.reload'
   | 'browser.hardReload'
   | 'browser.focusAddressBar'
+  | 'browser.copyLink'
   | 'browser.grabElement'
   | 'editor.find'
   | 'editor.replace'
@@ -803,6 +804,14 @@ export const KEYBINDING_DEFINITIONS: readonly KeybindingDefinition[] = [
     scope: 'browser',
     searchKeywords: ['shortcut', 'browser', 'grab', 'copy', 'element'],
     defaultBindings: platformBindings(['Mod+C'])
+  },
+  {
+    id: 'browser.copyLink',
+    title: 'Copy Browser Page URL',
+    group: 'Browser',
+    scope: 'browser',
+    searchKeywords: ['shortcut', 'browser', 'copy', 'link', 'url', 'address'],
+    defaultBindings: platformBindings(['Mod+Shift+C'])
   },
   {
     id: 'editor.find',
