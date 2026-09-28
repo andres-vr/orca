@@ -14,6 +14,7 @@ import { getLiveBrowserUrl } from '../describe-page/live-browser-url-registry'
 
 let hasShownCopyLinkNotice = false
 
+/** Copies the pane's live URL to the clipboard, toasting once per session on success. */
 // Why: announce only after the write lands — a rejected copy must leave the notice (and flag) for a later, successful attempt.
 function copyBrowserPageUrlToClipboard(browserTabId: string): void {
   const url = getLiveBrowserUrl(browserTabId)
@@ -140,6 +141,7 @@ export function useBrowserPageWebviewShortcuts({
       return
     }
     const shortcutPlatform = getShortcutPlatform()
+    /** Copies the live URL when the copy-link chord fires outside editable targets. */
     const handleKeyDown = (e: KeyboardEvent): void => {
       const isCopyLink = keybindingMatchesAction(
         'browser.copyLink',

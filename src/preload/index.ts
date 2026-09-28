@@ -4009,6 +4009,7 @@ const api = {
       ipcRenderer.on('ui:focusBrowserAddressBar', listener)
       return () => ipcRenderer.removeListener('ui:focusBrowserAddressBar', listener)
     },
+    /** Delivers guest-focus copy-URL chords carrying their owning page id. */
     onCopyBrowserPageUrl: (
       callback: (payload: { browserPageId: string }) => void
     ): (() => void) => {

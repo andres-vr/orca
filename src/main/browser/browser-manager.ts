@@ -2194,6 +2194,7 @@ export class BrowserManager {
     )
   }
 
+  /** Registers per-tab copy-link forwarding for a newly attached guest. */
   // Why: forward copy-link from a focused guest only when no edit field holds focus, so page-app chords still work.
   private setupCopyLinkShortcut(browserTabId: string, guest: Electron.WebContents): void {
     const previousCleanup = this.copyLinkShortcutCleanupByTabId.get(browserTabId)
