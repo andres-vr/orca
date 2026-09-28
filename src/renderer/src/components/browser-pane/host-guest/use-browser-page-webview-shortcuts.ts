@@ -14,6 +14,25 @@ import { getLiveBrowserUrl } from '../describe-page/live-browser-url-registry'
 
 let hasShownCopyLinkNotice = false
 
+// Why: announce only after the write lands — a rejected copy must leave the notice (and flag) for a later, successful attempt.
+function copyBrowserPageUrlToClipboard(browserTabId: string): void {
+  const url = getLiveBrowserUrl(browserTabId)
+  if (!url) {
+    return
+  }
+  void window.api.ui
+    .writeClipboardText(url)
+    .then(() => {
+      if (!hasShownCopyLinkNotice) {
+        hasShownCopyLinkNotice = true
+        toast.success('URL copied')
+      }
+    })
+    .catch(() => {
+      toast.error('Failed to copy URL.')
+    })
+}
+
 /**
  * History, reload and zoom chords for a <webview>-backed pane — local and client-hosted alike.
  * Each one is handled twice: once for chrome focus, where the chord never leaves the renderer,
@@ -134,16 +153,9 @@ export function useBrowserPageWebviewShortcuts({
       if (isEditableKeyboardTarget(e.target)) {
         return
       }
-      const url = getLiveBrowserUrl(browserTabId)
-      if (url) {
-        e.preventDefault()
-        e.stopPropagation()
-        void window.api.ui.writeClipboardText(url)
-        if (!hasShownCopyLinkNotice) {
-          hasShownCopyLinkNotice = true
-          toast.success('URL copied')
-        }
-      }
+      e.preventDefault()
+      e.stopPropagation()
+      copyBrowserPageUrlToClipboard(browserTabId)
     }
     window.addEventListener('keydown', handleKeyDown, true)
     return () => window.removeEventListener('keydown', handleKeyDown, true)
@@ -175,15 +187,12 @@ export function useBrowserPageWebviewShortcuts({
     if (!isActive) {
       return
     }
-    return window.api.ui.onCopyBrowserPageUrl(() => {
-      const url = getLiveBrowserUrl(browserTabId)
-      if (url) {
-        void window.api.ui.writeClipboardText(url)
-        if (!hasShownCopyLinkNotice) {
-          hasShownCopyLinkNotice = true
-          toast.success('URL copied')
-        }
+    return window.api.ui.onCopyBrowserPageUrl((payload) => {
+      // Why: splits share one renderer, so every pane hears the event; only the guest owner's pane copies.
+      if (payload.browserPageId !== browserTabId) {
+        return
       }
+      copyBrowserPageUrlToClipboard(browserTabId)
     })
   }, [isActive, browserTabId])
 

@@ -32,6 +32,7 @@ import type { BrowserClientDownloadRoute } from './browser-client-download-relay
 import { routeBrowserClientDownload } from './browser-client-download-routing'
 import { resolveBrowserRouteGuestPopupOpener } from './browser-route-guest-popup-ownership'
 import { resolveRendererWebContents } from './browser-guest-renderer-target'
+import { setupCopyLinkShortcutForwarding } from './browser-guest-copy-link-shortcut'
 import { setupGrabShortcutForwarding } from './browser-guest-grab-shortcuts'
 import { setupGuestContextMenu } from './browser-guest-context-menu'
 import { setupGuestMouseWheelZoomForwarding } from './browser-guest-wheel-zoom'
@@ -275,6 +276,7 @@ export class BrowserManager {
   private readonly pendingNavigationByGuestId = new Map<number, PendingMainFrameNavigation>()
   private readonly contextMenuCleanupByTabId = new Map<string, () => void>()
   private readonly grabShortcutCleanupByTabId = new Map<string, () => void>()
+  private readonly copyLinkShortcutCleanupByTabId = new Map<string, () => void>()
   private readonly shortcutForwardingCleanupByTabId = new Map<string, () => void>()
   private readonly mouseWheelZoomCleanupByTabId = new Map<string, () => void>()
   private readonly annotationViewportBridgeOpsByTabId = new Map<string, Promise<unknown>>()
@@ -1416,6 +1418,7 @@ export class BrowserManager {
     this.setupContextMenu(browserTabId, guest)
     this.setupGrabShortcut(browserTabId, guest)
     this.setupShortcutForwarding(browserTabId, guest)
+    this.setupCopyLinkShortcut(browserTabId, guest)
     this.setupMouseWheelZoomForwarding(browserTabId, guest)
     this.flushPendingLoadFailure(browserTabId, webContentsId)
     this.flushPendingPermissionEvents(browserTabId, webContentsId)
@@ -1449,6 +1452,11 @@ export class BrowserManager {
     if (shortcutCleanup) {
       shortcutCleanup()
       this.grabShortcutCleanupByTabId.delete(browserTabId)
+    }
+    const copyLinkCleanup = this.copyLinkShortcutCleanupByTabId.get(browserTabId)
+    if (copyLinkCleanup) {
+      copyLinkCleanup()
+      this.copyLinkShortcutCleanupByTabId.delete(browserTabId)
     }
     const fwdCleanup = this.shortcutForwardingCleanupByTabId.get(browserTabId)
     if (fwdCleanup) {
@@ -2181,6 +2189,26 @@ export class BrowserManager {
         resolveRenderer: (tabId) =>
           resolveRendererWebContents(this.rendererWebContentsIdByTabId, tabId),
         hasActiveGrabOp: (tabId) => this.hasActiveGrabOp(tabId),
+        getKeybindings: () => this.settingsResolver?.().keybindings
+      })
+    )
+  }
+
+  // Why: forward copy-link from a focused guest only when no edit field holds focus, so page-app chords still work.
+  private setupCopyLinkShortcut(browserTabId: string, guest: Electron.WebContents): void {
+    const previousCleanup = this.copyLinkShortcutCleanupByTabId.get(browserTabId)
+    if (previousCleanup) {
+      previousCleanup()
+      this.copyLinkShortcutCleanupByTabId.delete(browserTabId)
+    }
+
+    this.copyLinkShortcutCleanupByTabId.set(
+      browserTabId,
+      setupCopyLinkShortcutForwarding({
+        browserTabId,
+        guest,
+        resolveRenderer: (tabId) =>
+          resolveRendererWebContents(this.rendererWebContentsIdByTabId, tabId),
         getKeybindings: () => this.settingsResolver?.().keybindings
       })
     )

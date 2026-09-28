@@ -137,9 +137,6 @@ export function forwardGuestShortcutInput(
   ) {
     // Why: the address bar lives in renderer chrome, not the guest page; forward so the active BrowserPane can focus its input.
     renderer.send('ui:focusBrowserAddressBar')
-  } else if (keybindingMatchesAction('browser.copyLink', input, process.platform, keybindings)) {
-    // Why: forward to renderer so the active BrowserPane can copy its live URL to the clipboard.
-    renderer.send('ui:copyBrowserPageUrl')
   } else if (keybindingMatchesAction('browser.hardReload', input, process.platform, keybindings)) {
     // Why: forward hard reload so reloadIgnoringCache() runs on the renderer's parked-webview ref that owns the guest surface.
     renderer.send('ui:hardReloadBrowserPage')

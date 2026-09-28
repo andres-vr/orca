@@ -4009,8 +4009,11 @@ const api = {
       ipcRenderer.on('ui:focusBrowserAddressBar', listener)
       return () => ipcRenderer.removeListener('ui:focusBrowserAddressBar', listener)
     },
-    onCopyBrowserPageUrl: (callback: () => void): (() => void) => {
-      const listener = (_event: Electron.IpcRendererEvent) => callback()
+    onCopyBrowserPageUrl: (
+      callback: (payload: { browserPageId: string }) => void
+    ): (() => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, payload: { browserPageId: string }) =>
+        callback(payload)
       ipcRenderer.on('ui:copyBrowserPageUrl', listener)
       return () => ipcRenderer.removeListener('ui:copyBrowserPageUrl', listener)
     },
